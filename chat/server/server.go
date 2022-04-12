@@ -29,14 +29,14 @@ type ChatroomServer struct {
 
 func (cs *ChatroomServer) CreateConversation(members []*pb.Client) *pb.Conversation {
 	var normalizedMembers []*pb.Client
-	for _, member in range members {
+	for _, member := range members {
 		cs.clients.Range(func(k interface{}, v interface{}) bool {
-			key := k.(string)
 			clientStream := v.(*ClientStream)
 			if clientStream.Name == member.GetName() {
-				append(normalizedMembers, &pb.Client{Name: member.GetName(), ClientId: clientStream.clientId,})
+				normalizedMembers = append(normalizedMembers, &pb.Client{Name: member.GetName(), ClientId: clientStream.ClientId,},)
 			}
-		}
+			return true
+		})
 	}
 	conversation := pb.Conversation{
 		Id: uuid.New().String(),

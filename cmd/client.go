@@ -37,34 +37,39 @@ var clientCmd = &cobra.Command{
 
 		waitc := make(chan struct{})
 
+		// Take Login Input
 		log.Println("Who are you?")
-		loginScanner := bufio.NewScanner(os.Stdin)
-		loginScanner.Scan()
-		name := strings.TrimSpace(loginScanner.Text())
-		chatClient := pb.ChatEvent{
+		mainScanner := bufio.NewScanner(os.Stdin)
+		mainScanner.Scan()
+		name := strings.TrimSpace(mainScanner.Text())
+		
+		// Send Login over to server
+		chatClient := &pb.Client{ Name: name, }
+		loginEvent := pb.ChatEvent{
 			Command: &pb.ChatEvent_Login{
-				Login: &pb.Client{
-					Name: name,
+				Login: chatClient,
 				},
-			},
-		}
-		sendErr := stream.Send(&client)
+			}
+		sendErr := stream.Send(&loginEvent)
 		if sendErr != nil {
 			log.Fatalf("Failed to send message to server: %v", err)
 		}
 
-		loginResponse, loginErr := stream.Recv()
+		// Receive Login Response
+		loginResponse, _ := stream.Recv()
 		if err != nil {
 			log.Fatalf("Failed to login to server")
 		}
 
-		
 		if login := loginResponse.GetLogin(); login != nil {
 			chatClient.ClientId = login.GetClientId()
 		}
 
+		log.Println("Who do you wanna call?")
+		mainScanner.Scan()
+		memberName := strings.TrimSpace(mainScanner.Text())
 		conversation := pb.Conversation{
-			Members: []pb.Client{pb.Client{ClientId}}
+			Members: []*pb.Client{chatClient, &pb.Client{Name: memberName}, },
 		}
 
 		// Receiving message from server
@@ -99,10 +104,13 @@ var clientCmd = &cobra.Command{
 				// if event == nil {
 				// 	continue
 				// }
+				message := pb.Message{}
+				message.Conversation = &conversation
+				message.From = chatClient
+				message.Content = text
+
 				err := stream.Send(&pb.ChatEvent{
-					Command: &pb.ChatEvent_Message{
-						Conversation: conversation,
-					},
+					Command: &pb.ChatEvent_Message{Message: &message},
 				})
 				if err != nil {
 					log.Fatalf("Failed to send message to server: %v", err)

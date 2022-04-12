@@ -8,9 +8,11 @@ import (
 )
 
 func main() {
-	//cmd.Execute()
 
-	// messages := make(chan string)
+
+	cmd.Execute()
+
+	//messages := make(chan string)
 
 	// go func () {
 
