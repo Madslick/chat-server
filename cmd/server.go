@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"log"
 	"fmt"
+	"log"
 	"net"
 
-	pb "github.com/Madslick/chat-server/chat/protos"
-	"github.com/Madslick/chat-server/chat/server"
-	"google.golang.org/grpc"
+	"github.com/Madslick/chat-server/internal/chat/server"
+	pb "github.com/Madslick/chat-server/pkg"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 var serverCmdPort int
@@ -17,17 +17,17 @@ var serverCmdPort int
 var serverCmd = &cobra.Command{
 	Use:   "server",
 	Short: "Start up chatroom server",
-	Run: func(cmd *cobra.Command, args[]string) {
+	Run: func(cmd *cobra.Command, args []string) {
 		lis, err := net.Listen("tcp", fmt.Sprintf(":%d", serverCmdPort))
 		if err != nil {
 			log.Fatalf("Failed to listen: %v", err)
 		}
-	
+
 		s := grpc.NewServer()
-	
+
 		pb.RegisterChatroomServer(s, server.NewServer())
 		log.Printf("Server listening at %v", lis.Addr())
-	
+
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 		}

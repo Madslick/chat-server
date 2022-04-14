@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	pb "github.com/Madslick/chat-server/chat/protos"
+	pb "github.com/Madslick/chat-server/pkg"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
