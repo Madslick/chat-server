@@ -9,7 +9,6 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/Madslick/chat-server/pkg"
 	"github.com/spf13/cobra"
@@ -23,8 +22,9 @@ var clientCmd = &cobra.Command{
 	Use:   "client",
 	Short: "Start up chatroom client",
 	Run: func(cmd *cobra.Command, args []string) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+		//ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx := context.TODO()
+		//defer cancel()
 
 		cc, err := grpc.DialContext(ctx, clientCmdHost, grpc.WithInsecure())
 		handleInitError(err, "connect")
@@ -68,8 +68,20 @@ var clientCmd = &cobra.Command{
 		log.Println("Who do you wanna call?")
 		mainScanner.Scan()
 		memberName := strings.TrimSpace(mainScanner.Text())
+
+		conversationResponse, err := client.CreateConversation(
+			ctx,
+			&pkg.ConversationRequest{
+				Members: []*pkg.Client{chatClient, &pkg.Client{Name: memberName}},
+			})
+
+		if err != nil {
+			log.Fatal("Unable to create conversation, error returned from server: ", err)
+		}
+
 		conversation := pkg.Conversation{
-			Members: []*pkg.Client{chatClient, &pkg.Client{Name: memberName}},
+			Id:      conversationResponse.GetId(),
+			Members: conversationResponse.GetMembers(),
 		}
 
 		// Receiving message from server

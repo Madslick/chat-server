@@ -45,7 +45,7 @@ func (cs *conversationService) CreateConversation(members []*datastruct.Client) 
 		for _, member := range members {
 			memberFound := false
 			for _, convMember := range conversation.Members {
-				if member.ClientId == convMember.ClientId {
+				if member.Name == convMember.Name {
 					memberFound = true
 				}
 			}
