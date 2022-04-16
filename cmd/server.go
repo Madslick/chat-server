@@ -6,7 +6,9 @@ import (
 	"net"
 
 	"github.com/Madslick/chat-server/internal/chat/server"
-	pb "github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chat-server/internal/chat/service_assistants"
+	"github.com/Madslick/chat-server/internal/chat/services"
+	"github.com/Madslick/chat-server/pkg"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
@@ -23,9 +25,12 @@ var serverCmd = &cobra.Command{
 			log.Fatalf("Failed to listen: %v", err)
 		}
 
-		s := grpc.NewServer()
+		// Instantiate Service Assistants
+		conversationAssistant := service_assistants.NewConversationAssistant(services.Conversation())
 
-		pb.RegisterChatroomServer(s, server.NewServer())
+		s := grpc.NewServer()
+		newChatroom := server.NewServer(conversationAssistant)
+		pkg.RegisterChatroomServer(s, newChatroom)
 		log.Printf("Server listening at %v", lis.Addr())
 
 		if err := s.Serve(lis); err != nil {

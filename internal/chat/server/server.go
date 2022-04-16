@@ -1,24 +1,16 @@
 package server
 
 import (
-	"sync"
-
-	pb "github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chat-server/internal/chat/service_assistants"
+	"github.com/Madslick/chat-server/pkg"
 )
 
-func NewServer() *ChatroomServer {
-	return &ChatroomServer{clients: sync.Map{}, conversations: make(map[string]*pb.Conversation)}
-}
-
-type ClientStream struct {
-	Stream   pb.Chatroom_ConverseServer
-	ClientId string
-	Name     string
+func NewServer(conversationAssistant service_assistants.ConversationAssistant) *ChatroomServer {
+	return &ChatroomServer{conversationAssistant: conversationAssistant}
 }
 
 type ChatroomServer struct {
-	pb.UnimplementedChatroomServer
+	pkg.UnimplementedChatroomServer
 
-	clients       sync.Map
-	conversations map[string]*pb.Conversation
+	conversationAssistant service_assistants.ConversationAssistant
 }

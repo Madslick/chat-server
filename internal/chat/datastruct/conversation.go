@@ -1,6 +1,6 @@
-package dto
+package datastruct
 
 type Conversation struct {
 	Id string
-	members []Client
+	Members [] Client
 }

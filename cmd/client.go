@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	pb "github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chat-server/pkg"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
@@ -30,7 +30,7 @@ var clientCmd = &cobra.Command{
 		handleInitError(err, "connect")
 		defer cc.Close()
 
-		client := pb.NewChatroomClient(cc)
+		client := pkg.NewChatroomClient(cc)
 		stream, err := client.Converse(context.Background())
 		handleInitError(err, "client converse")
 		defer stream.CloseSend()
@@ -42,14 +42,14 @@ var clientCmd = &cobra.Command{
 		mainScanner := bufio.NewScanner(os.Stdin)
 		mainScanner.Scan()
 		name := strings.TrimSpace(mainScanner.Text())
-		
+
 		// Send Login over to server
-		chatClient := &pb.Client{ Name: name, }
-		loginEvent := pb.ChatEvent{
-			Command: &pb.ChatEvent_Login{
+		chatClient := &pkg.Client{Name: name}
+		loginEvent := pkg.ChatEvent{
+			Command: &pkg.ChatEvent_Login{
 				Login: chatClient,
-				},
-			}
+			},
+		}
 		sendErr := stream.Send(&loginEvent)
 		if sendErr != nil {
 			log.Fatalf("Failed to send message to server: %v", err)
@@ -68,8 +68,8 @@ var clientCmd = &cobra.Command{
 		log.Println("Who do you wanna call?")
 		mainScanner.Scan()
 		memberName := strings.TrimSpace(mainScanner.Text())
-		conversation := pb.Conversation{
-			Members: []*pb.Client{chatClient, &pb.Client{Name: memberName}, },
+		conversation := pkg.Conversation{
+			Members: []*pkg.Client{chatClient, &pkg.Client{Name: memberName}},
 		}
 
 		// Receiving message from server
@@ -104,13 +104,13 @@ var clientCmd = &cobra.Command{
 				// if event == nil {
 				// 	continue
 				// }
-				message := pb.Message{}
+				message := pkg.Message{}
 				message.Conversation = &conversation
 				message.From = chatClient
 				message.Content = text
 
-				err := stream.Send(&pb.ChatEvent{
-					Command: &pb.ChatEvent_Message{Message: &message},
+				err := stream.Send(&pkg.ChatEvent{
+					Command: &pkg.ChatEvent_Message{Message: &message},
 				})
 				if err != nil {
 					log.Fatalf("Failed to send message to server: %v", err)

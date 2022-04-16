@@ -4,34 +4,16 @@ import (
 	"context"
 	"log"
 
-	"github.com/google/uuid"
-
-	pb "github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chat-server/pkg"
 )
 
-func (cs *ChatroomServer) CreateConversation(ctx context.Context, in *pb.ConversationRequest) (*pb.ConversationResponse, error) {
-	members := in.GetMembers()
-	var normalizedMembers []*pb.Client
-	for _, member := range members {
-		cs.clients.Range(func(k interface{}, v interface{}) bool {
-			clientStream := v.(*ClientStream)
-			if clientStream.Name == member.GetName() {
-				normalizedMembers = append(normalizedMembers, &pb.Client{Name: member.GetName(), ClientId: clientStream.ClientId})
-			}
-			return true
-		})
-	}
-	conversation := pb.Conversation{
-		Id:      uuid.New().String(),
-		Members: normalizedMembers,
+func (cs *ChatroomServer) CreateConversation(ctx context.Context, in *pkg.ConversationRequest) (*pkg.ConversationResponse, error) {
+
+	conversationResponse, err := cs.conversationAssistant.CreateConversation(in.GetMembers())
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	cs.conversations[conversation.Id] = &conversation
-	log.Println("New Conversation saved with Id: ", conversation.Id)
-
-	conversationResponse := pb.ConversationResponse{
-		Id:      conversation.Id,
-		Members: conversation.Members,
-	}
-	return &conversationResponse, nil
+	return conversationResponse, nil
 }
