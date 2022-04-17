@@ -1,4 +1,4 @@
-module github.com/Madslick/chat-server
+module github.com/Madslick/chit-chat-go
 
 go 1.17
 

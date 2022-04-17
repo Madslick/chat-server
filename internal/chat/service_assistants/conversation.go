@@ -3,9 +3,9 @@ package service_assistants
 import (
 	"log"
 
-	"github.com/Madslick/chat-server/internal/chat/datastruct"
-	"github.com/Madslick/chat-server/internal/chat/services"
-	"github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chit-chat-go/internal/chat/datastruct"
+	"github.com/Madslick/chit-chat-go/internal/chat/services"
+	"github.com/Madslick/chit-chat-go/pkg"
 )
 
 type ConversationAssistant interface {

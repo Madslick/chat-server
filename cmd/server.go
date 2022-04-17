@@ -5,10 +5,10 @@ import (
 	"log"
 	"net"
 
-	"github.com/Madslick/chat-server/internal/chat/server"
-	"github.com/Madslick/chat-server/internal/chat/service_assistants"
-	"github.com/Madslick/chat-server/internal/chat/services"
-	"github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chit-chat-go/internal/chat/server"
+	"github.com/Madslick/chit-chat-go/internal/chat/service_assistants"
+	"github.com/Madslick/chit-chat-go/internal/chat/services"
+	"github.com/Madslick/chit-chat-go/pkg"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )

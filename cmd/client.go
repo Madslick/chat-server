@@ -10,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chit-chat-go/pkg"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )

@@ -4,7 +4,7 @@ import (
 	//"fmt"
 	// "time"
 	//"log"
-	"github.com/Madslick/chat-server/cmd"
+	"github.com/Madslick/chit-chat-go/cmd"
 )
 
 func main() {

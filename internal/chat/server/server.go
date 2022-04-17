@@ -1,8 +1,8 @@
 package server
 
 import (
-	"github.com/Madslick/chat-server/internal/chat/service_assistants"
-	"github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chit-chat-go/internal/chat/service_assistants"
+	"github.com/Madslick/chit-chat-go/pkg"
 )
 
 func NewServer(conversationAssistant service_assistants.ConversationAssistant) *ChatroomServer {

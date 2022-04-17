@@ -5,8 +5,8 @@ import (
 	"log"
 	"sync"
 
-	"github.com/Madslick/chat-server/internal/chat/datastruct"
-	"github.com/Madslick/chat-server/pkg"
+	"github.com/Madslick/chit-chat-go/internal/chat/datastruct"
+	"github.com/Madslick/chit-chat-go/pkg"
 	"github.com/google/uuid"
 )
 
