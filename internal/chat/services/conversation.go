@@ -5,9 +5,11 @@ import (
 	"log"
 	"sync"
 
+	"github.com/google/uuid"
+
 	"github.com/Madslick/chit-chat-go/internal/chat/datastruct"
 	"github.com/Madslick/chit-chat-go/pkg"
-	"github.com/google/uuid"
+	"github.com/Madslick/chit-chat-go/shared"
 )
 
 type ConversationService interface {
@@ -17,6 +19,7 @@ type ConversationService interface {
 }
 
 type conversationService struct {
+	mongoClient   shared.DbConnection
 	clients       sync.Map
 	conversations map[string]*datastruct.Conversation
 }
@@ -24,10 +27,13 @@ type conversationService struct {
 var conversationOnce sync.Once
 var conversationInstance ConversationService
 
-func Conversation() ConversationService {
+func Conversation(mongoClient shared.DbConnection) ConversationService {
 	conversationOnce.Do(func() { // <-- atomic, does not allow repeating
 
-		conversationInstance = &conversationService{clients: sync.Map{}, conversations: make(map[string]*datastruct.Conversation)}
+		conversationInstance = &conversationService{
+			mongoClient:   mongoClient,
+			clients:       sync.Map{},
+			conversations: make(map[string]*datastruct.Conversation)}
 	})
 
 	return conversationInstance
@@ -56,6 +62,7 @@ func (cs *conversationService) CreateConversation(members []*datastruct.Client) 
 		}
 
 		if conversationFound {
+			log.Printf("Returning Conversation %s found in cache\n", conversation.Id)
 			return conversation, nil
 		}
 	}
@@ -81,15 +88,15 @@ func (cs *conversationService) CreateConversation(members []*datastruct.Client) 
 }
 
 func (cs *conversationService) Converse(stream pkg.Chatroom_ConverseServer) error {
-
+	var clientId string
 	for {
 		in, err := stream.Recv()
-		var clientId string
 
 		if err == io.EOF {
 			return nil
 		}
 		if err != nil {
+			cs.clients.Delete(clientId)
 			return err
 		}
 
@@ -105,12 +112,12 @@ func (cs *conversationService) Converse(stream pkg.Chatroom_ConverseServer) erro
 				ClientId: clientId,
 				Name:     name,
 			}
-			log.Println(name, " logged in with client id: ", from.ClientId)
 			cs.Broadcast(from, nil, &pkg.ChatEvent{
 				Command: &pkg.ChatEvent_Login{
 					Login: from,
 				},
 			})
+			log.Printf("%s logged in with client id: %s\n", name, from.GetClientId())
 		} else if message := in.GetMessage(); message != nil {
 			// Get this message broadcasted out
 			from := message.GetFrom()
@@ -124,6 +131,7 @@ func (cs *conversationService) Converse(stream pkg.Chatroom_ConverseServer) erro
 					},
 				},
 			})
+			log.Printf("Message sent from %s in conversation %s with content %s\n", from.GetName(), conversation.GetId(), message.GetContent())
 		}
 	}
 }
@@ -148,6 +156,5 @@ func (cs *conversationService) Broadcast(from *pkg.Client, conversation *pkg.Con
 		} else {
 			log.Fatal("Unable to find client for message event by Id: ", to.ClientId)
 		}
-
 	}
 }
