@@ -1,4 +1,4 @@
-package shared
+package db
 
 import (
 	"context"
@@ -12,24 +12,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type DbConnection interface {
-	Connect() error
-	CreateConversation(members []*datastruct.Client)
-	CreateMessage(message *datastruct.Message)
-}
-
-type MongoClient struct {
+type mongoClient struct {
 	client        *mongo.Client
 	conversations *mongo.Collection
 }
 
-func SetupDb() DbConnection {
-	dbConnection := &MongoClient{}
-	dbConnection.Connect()
-	return dbConnection
-}
-
-func (mc *MongoClient) Connect() error {
+func (mc *mongoClient) Connect() error {
 	var err error
 	mc.client, err = mongo.NewClient(
 		options.Client().ApplyURI(
@@ -61,10 +49,10 @@ func (mc *MongoClient) Connect() error {
 	return nil
 }
 
-func (mc *MongoClient) CreateConversation(members []*datastruct.Client) {
+func (mc *mongoClient) CreateConversation(members []*datastruct.Client) {
 
 }
 
-func (mc *MongoClient) CreateMessage(message *datastruct.Message) {
+func (mc *mongoClient) CreateMessage(message *datastruct.Message) {
 
 }

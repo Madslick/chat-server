@@ -9,7 +9,7 @@ import (
 
 	"github.com/Madslick/chit-chat-go/internal/chat/datastruct"
 	"github.com/Madslick/chit-chat-go/pkg"
-	"github.com/Madslick/chit-chat-go/shared"
+	"github.com/Madslick/chit-chat-go/shared/db"
 )
 
 type ConversationService interface {
@@ -19,7 +19,7 @@ type ConversationService interface {
 }
 
 type conversationService struct {
-	mongoClient   shared.DbConnection
+	mongoClient   db.DbConnection
 	clients       sync.Map
 	conversations map[string]*datastruct.Conversation
 }
@@ -27,7 +27,7 @@ type conversationService struct {
 var conversationOnce sync.Once
 var conversationInstance ConversationService
 
-func Conversation(mongoClient shared.DbConnection) ConversationService {
+func Conversation(mongoClient db.DbConnection) ConversationService {
 	conversationOnce.Do(func() { // <-- atomic, does not allow repeating
 
 		conversationInstance = &conversationService{

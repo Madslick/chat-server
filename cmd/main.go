@@ -13,7 +13,7 @@ import (
 	"github.com/Madslick/chit-chat-go/internal/chat/service_assistants"
 	"github.com/Madslick/chit-chat-go/internal/chat/services"
 	"github.com/Madslick/chit-chat-go/pkg"
-	"github.com/Madslick/chit-chat-go/shared"
+	"github.com/Madslick/chit-chat-go/shared/db"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 	s := grpc.NewServer()
 
 	// Setup Database
-	mongo_client := shared.SetupDb()
+	mongo_client := db.SetupDb()
 	if err != nil {
 		os.Exit(1)
 	}
