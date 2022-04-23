@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.20.0
-// source: chatter.proto
+// source: chat.proto
 
 package pkg
 
@@ -36,7 +36,7 @@ func NewChatroomClient(cc grpc.ClientConnInterface) ChatroomClient {
 
 func (c *chatroomClient) CreateConversation(ctx context.Context, in *ConversationRequest, opts ...grpc.CallOption) (*ConversationResponse, error) {
 	out := new(ConversationResponse)
-	err := c.cc.Invoke(ctx, "/protos.Chatroom/CreateConversation", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/pkg.Chatroom/CreateConversation", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (c *chatroomClient) CreateConversation(ctx context.Context, in *Conversatio
 }
 
 func (c *chatroomClient) Converse(ctx context.Context, opts ...grpc.CallOption) (Chatroom_ConverseClient, error) {
-	stream, err := c.cc.NewStream(ctx, &Chatroom_ServiceDesc.Streams[0], "/protos.Chatroom/Converse", opts...)
+	stream, err := c.cc.NewStream(ctx, &Chatroom_ServiceDesc.Streams[0], "/pkg.Chatroom/Converse", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -116,7 +116,7 @@ func _Chatroom_CreateConversation_Handler(srv interface{}, ctx context.Context, 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/protos.Chatroom/CreateConversation",
+		FullMethod: "/pkg.Chatroom/CreateConversation",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChatroomServer).CreateConversation(ctx, req.(*ConversationRequest))
@@ -154,7 +154,7 @@ func (x *chatroomConverseServer) Recv() (*ChatEvent, error) {
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Chatroom_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "protos.Chatroom",
+	ServiceName: "pkg.Chatroom",
 	HandlerType: (*ChatroomServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -170,5 +170,5 @@ var Chatroom_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "chatter.proto",
+	Metadata: "chat.proto",
 }

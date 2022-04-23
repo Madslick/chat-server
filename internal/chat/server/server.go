@@ -1,16 +1,16 @@
 package server
 
 import (
-	"github.com/Madslick/chit-chat-go/internal/chat/service_assistants"
-	"github.com/Madslick/chit-chat-go/pkg"
+	"github.com/Madslick/chit-chat-go/internal/chat/connectors"
+	"github.com/Madslick/chit-chat-go/internal/chat/pkg"
 )
 
-func NewServer(conversationAssistant service_assistants.ConversationAssistant) *ChatroomServer {
+func NewServer(conversationAssistant connectors.ConversationConnector) *ChatroomServer {
 	return &ChatroomServer{conversationAssistant: conversationAssistant}
 }
 
 type ChatroomServer struct {
 	pkg.UnimplementedChatroomServer
 
-	conversationAssistant service_assistants.ConversationAssistant
+	conversationAssistant connectors.ConversationConnector
 }

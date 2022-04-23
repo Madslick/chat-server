@@ -7,14 +7,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/Madslick/chit-chat-go/internal/chat/datastruct"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type mongoClient struct {
-	client        *mongo.Client
-	conversations *mongo.Collection
+	client *mongo.Client
 }
 
 func (mc *mongoClient) Connect() error {
@@ -32,7 +30,9 @@ func (mc *mongoClient) Connect() error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	err = mc.client.Connect(ctx)
 	if err != nil {
 		log.Fatal(err)
@@ -44,15 +44,9 @@ func (mc *mongoClient) Connect() error {
 	}
 	log.Println("MongoDB Connected Successfully")
 
-	mc.conversations = mc.client.Database(os.Getenv("CHAT_DB")).Collection("conversations")
-
 	return nil
 }
 
-func (mc *mongoClient) CreateConversation(members []*datastruct.Client) {
-
-}
-
-func (mc *mongoClient) CreateMessage(message *datastruct.Message) {
-
+func (mc *mongoClient) MongoClient() (*mongo.Client, error) {
+	return mc.client, nil
 }

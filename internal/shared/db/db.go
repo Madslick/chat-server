@@ -1,6 +1,9 @@
 package db
 
+import "go.mongodb.org/mongo-driver/mongo"
+
 type DbConnection interface {
+	MongoClient() (*mongo.Client, error)
 	Connect() error
 }
 

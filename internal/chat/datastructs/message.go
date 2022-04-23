@@ -1,4 +1,4 @@
-package datastruct
+package datastructs
 
 type Message struct {
 	from         Client

@@ -5,89 +5,66 @@ import (
 	"log"
 	"sync"
 
-	"github.com/google/uuid"
-
-	"github.com/Madslick/chit-chat-go/internal/chat/datastruct"
-	"github.com/Madslick/chit-chat-go/pkg"
-	"github.com/Madslick/chit-chat-go/shared/db"
+	"github.com/Madslick/chit-chat-go/internal/chat/datastructs"
+	"github.com/Madslick/chit-chat-go/internal/chat/pkg"
+	"github.com/Madslick/chit-chat-go/internal/chat/repository"
 )
 
 type ConversationService interface {
-	CreateConversation(members []*datastruct.Client) (*datastruct.Conversation, error)
+	CreateConversation(members []*datastructs.Client) (*datastructs.Conversation, error)
 	Converse(conversationStream pkg.Chatroom_ConverseServer) error
 	Broadcast(from *pkg.Client, conversation *pkg.Conversation, event *pkg.ChatEvent)
 }
 
 type conversationService struct {
-	mongoClient   db.DbConnection
-	clients       sync.Map
-	conversations map[string]*datastruct.Conversation
+	repo    repository.Repository
+	clients sync.Map
 }
 
 var conversationOnce sync.Once
 var conversationInstance ConversationService
 
-func Conversation(mongoClient db.DbConnection) ConversationService {
+func NewConversationService(repo repository.Repository) ConversationService {
 	conversationOnce.Do(func() { // <-- atomic, does not allow repeating
 
 		conversationInstance = &conversationService{
-			mongoClient:   mongoClient,
-			clients:       sync.Map{},
-			conversations: make(map[string]*datastruct.Conversation)}
+			repo:    repo,
+			clients: sync.Map{},
+		}
 	})
 
 	return conversationInstance
 }
 
-func (cs *conversationService) CreateConversation(members []*datastruct.Client) (*datastruct.Conversation, error) {
-
-	for _, conversation := range cs.conversations {
-
-		if len(members) != len(conversation.Members) {
-			continue
-		}
-
-		conversationFound := true
-		for _, member := range members {
-			memberFound := false
-			for _, convMember := range conversation.Members {
-				if member.Name == convMember.Name {
-					memberFound = true
-				}
-			}
-
-			if !memberFound {
-				conversationFound = false
-			}
-		}
-
-		if conversationFound {
-			log.Printf("Returning Conversation %s found in cache\n", conversation.Id)
-			return conversation, nil
-		}
-	}
-
-	var normalizedMembers []datastruct.Client
+func (cs *conversationService) CreateConversation(members []*datastructs.Client) (*datastructs.Conversation, error) {
+	var memberNames []string
 	for _, member := range members {
-		cs.clients.Range(func(k interface{}, v interface{}) bool {
-			clientStream := v.(*datastruct.Client)
-			if clientStream.Name == member.Name {
-				normalizedMembers = append(normalizedMembers, datastruct.Client{Name: member.Name, ClientId: clientStream.ClientId})
-			}
-			return true
-		})
+		memberNames = append(memberNames, member.Name)
 	}
-	conversation := datastruct.Conversation{
-		Id:      uuid.New().String(),
-		Members: normalizedMembers,
+	conversation, err := cs.repo.GetConversationByMemberNames(memberNames)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if conversation.Id != "" {
+		log.Println("Found Conversation in database!")
+		return &conversation, nil
 	}
 
-	cs.conversations[conversation.Id] = &conversation
+	id, insertError := cs.repo.CreateConversation(members)
+	if insertError != nil {
+		log.Fatal("Insert Error calling the repo.CreateConversation from the conversation Service", insertError)
+	}
+
+	conversation = datastructs.Conversation{
+		Id:      id,
+		Members: members,
+	}
 	log.Println("New Conversation saved with Id: ", conversation.Id)
 	return &conversation, nil
 }
 
 func (cs *conversationService) Converse(stream pkg.Chatroom_ConverseServer) error {
+
 	var clientId string
 	for {
 		in, err := stream.Recv()
@@ -101,9 +78,10 @@ func (cs *conversationService) Converse(stream pkg.Chatroom_ConverseServer) erro
 		}
 
 		if login := in.GetLogin(); login != nil {
-			clientId = uuid.New().String()
+			clientId := login.GetClientId()
 			name := login.GetName()
-			cs.clients.Store(clientId, &datastruct.Client{
+			log.Printf("%s with %s has requested a stream registration", name, clientId)
+			cs.clients.Store(clientId, &datastructs.Client{
 				Stream:   stream,
 				ClientId: clientId,
 				Name:     name,
@@ -140,7 +118,7 @@ func (cs *conversationService) Broadcast(from *pkg.Client, conversation *pkg.Con
 
 	if conversation == nil {
 		if client, ok := cs.clients.Load(from.ClientId); ok {
-			client.(*datastruct.Client).Stream.Send(event)
+			client.(*datastructs.Client).Stream.Send(event)
 		} else {
 			log.Fatal("Unable to find client for login event by Id: ", from.ClientId)
 		}
@@ -152,7 +130,7 @@ func (cs *conversationService) Broadcast(from *pkg.Client, conversation *pkg.Con
 			continue
 		}
 		if client, ok := cs.clients.Load(to.ClientId); ok {
-			client.(*datastruct.Client).Stream.Send(event)
+			client.(*datastructs.Client).Stream.Send(event)
 		} else {
 			log.Fatal("Unable to find client for message event by Id: ", to.ClientId)
 		}

@@ -9,11 +9,19 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/Madslick/chit-chat-go/internal/chat/server"
-	"github.com/Madslick/chit-chat-go/internal/chat/service_assistants"
-	"github.com/Madslick/chit-chat-go/internal/chat/services"
-	"github.com/Madslick/chit-chat-go/pkg"
-	"github.com/Madslick/chit-chat-go/shared/db"
+	"github.com/Madslick/chit-chat-go/internal/shared/db"
+
+	chatConnectors "github.com/Madslick/chit-chat-go/internal/chat/connectors"
+	chatPkg "github.com/Madslick/chit-chat-go/internal/chat/pkg"
+	chatRepository "github.com/Madslick/chit-chat-go/internal/chat/repository"
+	chatServer "github.com/Madslick/chit-chat-go/internal/chat/server"
+	chatServices "github.com/Madslick/chit-chat-go/internal/chat/services"
+
+	authConnectors "github.com/Madslick/chit-chat-go/internal/auth/connectors"
+	authPkg "github.com/Madslick/chit-chat-go/internal/auth/pkg"
+	authRepository "github.com/Madslick/chit-chat-go/internal/auth/repository"
+	authServer "github.com/Madslick/chit-chat-go/internal/auth/server"
+	authServices "github.com/Madslick/chit-chat-go/internal/auth/services"
 )
 
 func main() {
@@ -34,20 +42,28 @@ func main() {
 	s := grpc.NewServer()
 
 	// Setup Database
-	mongo_client := db.SetupDb()
+	dbConnection := db.SetupDb()
 	if err != nil {
 		os.Exit(1)
 	}
 
-	// Setup Services
-	conversationService := services.Conversation(mongo_client)
+	chatRepo := chatRepository.NewRepository(dbConnection)
+	authRepo := authRepository.NewRepository(dbConnection)
 
-	// Setup Service Assistants
-	conversationAssistant := service_assistants.NewConversationAssistant(conversationService)
+	// Setup Services
+	conversationService := chatServices.NewConversationService(chatRepo)
+	accountService := authServices.NewAccountService(authRepo)
+
+	// Setup Server-to-Service Connectors
+	conversationConnector := chatConnectors.NewConversationConnector(conversationService)
+	accountConnector := authConnectors.NewAccountConnector(accountService)
 
 	// Start Chat App
-	newChatroom := server.NewServer(conversationAssistant)
-	pkg.RegisterChatroomServer(s, newChatroom)
+	newChatroom := chatServer.NewServer(conversationConnector)
+	newAuth := authServer.NewServer(accountConnector)
+
+	chatPkg.RegisterChatroomServer(s, newChatroom)
+	authPkg.RegisterAuthServer(s, newAuth)
 
 	// Serve the App now
 	if err := s.Serve(lis); err != nil {
