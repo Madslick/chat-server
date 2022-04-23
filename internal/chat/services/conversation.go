@@ -55,6 +55,7 @@ func (cs *conversationService) CreateConversation(members []*datastructs.Client)
 		log.Fatal("Insert Error calling the repo.CreateConversation from the conversation Service", insertError)
 	}
 
+	// CLIENT IS LOOKING AT MEMBERS CLIENTID INSTEAD OF ID
 	conversation = datastructs.Conversation{
 		Id:      id,
 		Members: members,
@@ -132,7 +133,7 @@ func (cs *conversationService) Broadcast(from *pkg.Client, conversation *pkg.Con
 		if client, ok := cs.clients.Load(to.ClientId); ok {
 			client.(*datastructs.Client).Stream.Send(event)
 		} else {
-			log.Fatal("Unable to find client for message event by Id: ", to.ClientId)
+			log.Fatalf("Unable to find client for message event by Id: %s", to.ClientId)
 		}
 	}
 }

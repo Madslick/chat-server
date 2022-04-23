@@ -11,6 +11,7 @@ func (as *AuthServer) SearchAccounts(ctx context.Context, in *pkg.SearchAccounts
 	accounts, err := as.authConnector.SearchAccounts(in)
 	if err != nil {
 		log.Fatalf("Error occurred while searching accounts %s", err)
+		return nil, err
 	}
 
 	return accounts, nil

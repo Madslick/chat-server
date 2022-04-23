@@ -8,7 +8,7 @@ import (
 type AccountService interface {
 	SignIn(email string, password string) (*datastructs.Account, error)
 	SignUp(email string, password string, first string, last string, phone string) (string, error)
-	SearchAccounts(searchQuery string) ([]*datastructs.Account, error)
+	SearchAccounts(searchQuery string, page int64, size int64) ([]*datastructs.Account, error)
 }
 
 type accountService struct {
@@ -28,6 +28,6 @@ func (as *accountService) SignUp(email string, password string, first string, la
 	return as.repo.SignUp(email, password, first, last, phone)
 }
 
-func (as *accountService) SearchAccounts(searchQuery string) ([]*datastructs.Account, error) {
-	return as.repo.SearchAccounts(searchQuery)
+func (as *accountService) SearchAccounts(searchQuery string, page int64, size int64) ([]*datastructs.Account, error) {
+	return as.repo.SearchAccounts(searchQuery, page, size)
 }

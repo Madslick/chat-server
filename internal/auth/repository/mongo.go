@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type mongoRepository struct {
@@ -73,7 +74,42 @@ func (mr *mongoRepository) SignIn(email string, password string) (*datastructs.A
 	}, nil
 }
 
-func (mr *mongoRepository) SearchAccounts(searchQuery string) ([]*datastructs.Account, error) {
+func (mr *mongoRepository) SearchAccounts(searchQuery string, page int64, size int64) ([]*datastructs.Account, error) {
+	opts := options.Find().SetSkip(page * size)
+	cursor, err := mr.accounts.Find(
+		context.TODO(),
+		bson.M{
+			"first": bson.M{
+				"$regex": searchQuery,
+			},
+		},
+		opts,
+	)
 
-	return []*datastructs.Account{}, nil
+	if err != nil {
+		log.Fatalf("Failed to search accounts in mongodb %s\n", err)
+		return nil, err
+	}
+
+	var results []mongostructs.Account
+	err = cursor.All(context.TODO(), &results)
+
+	if err != nil {
+		log.Fatalf("Error occurred while iterating over the cursor of the search accounts result of mongodb %s\n", err)
+		return nil, err
+	}
+	log.Printf("SearchAccounts found %d records\n", len(results))
+
+	var accounts []*datastructs.Account
+	for _, acc := range results {
+		accounts = append(accounts, &datastructs.Account{
+			Id:    acc.Id,
+			Email: acc.Email,
+			Phone: acc.Phone,
+			First: acc.First,
+			Last:  acc.Last,
+		})
+	}
+
+	return accounts, nil
 }

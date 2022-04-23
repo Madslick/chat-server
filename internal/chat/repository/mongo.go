@@ -74,23 +74,18 @@ func (mr *mongoRepository) GetConversationByMemberNames(memberNames []string) (d
 	}
 
 	log.Printf("Conversation filter returned %d results\n", len(conversations))
-	// db.conversations.find(
-	// 	{
-	// 		"$and": [
-	// 			{ members: {$elemMatch: { "name": "Joe" } } } ,
-	// 			{ members: {$elemMatch: { "name": "Kira" } } },
-	// 			{ members: {$size: 2} }
-	// 		]
-	// 	}
-	// )
+
 	conversation := datastructs.Conversation{}
 	if len(conversations) == 1 {
 		conversation.Id = conversations[0].Id.String()
+
+		// Build Members
 		conversation.Members = []*datastructs.Client{}
 		for _, client := range conversations[0].Members {
 			conversation.Members = append(conversation.Members,
 				&datastructs.Client{
-					Name: client.Name,
+					ClientId: client.Id,
+					Name:     client.Name,
 				},
 			)
 		}

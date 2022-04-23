@@ -55,7 +55,18 @@ func (ac *accountConnector) SignIn(request *pkg.SignInRequest) (*pkg.Account, er
 
 func (ac *accountConnector) SearchAccounts(request *pkg.SearchAccountsRequest) (*pkg.SearchAccountsResponse, error) {
 
-	_, err := ac.accountService.SearchAccounts(request.GetSearchQuery())
+	accounts, err := ac.accountService.SearchAccounts(request.GetSearchQuery(), request.GetPage(), request.GetSize())
 
-	return &pkg.SearchAccountsResponse{}, err
+	var responseAccounts []*pkg.Account
+	for _, acc := range accounts {
+		responseAccounts = append(responseAccounts, &pkg.Account{
+			Id:          acc.Id,
+			Email:       acc.Email,
+			FirstName:   acc.First,
+			LastName:    acc.Last,
+			PhoneNumber: acc.Phone,
+		})
+	}
+
+	return &pkg.SearchAccountsResponse{Members: responseAccounts}, err
 }
