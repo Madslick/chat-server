@@ -24,20 +24,23 @@ func NewConversationConnector(conversationService services.ConversationService) 
 }
 
 func (cc *conversationConnector) CreateConversation(members []*pkg.Client) (*pkg.ConversationResponse, error) {
+	// Convert to datastruct
 	var chatMembers []*datastructs.Client
 	for _, member := range members {
 		chatMembers = append(chatMembers, &datastructs.Client{ClientId: member.GetClientId(), Name: member.GetName()})
 	}
+
+	// Make call to service function
 	conversation, err := cc.conversationService.CreateConversation(chatMembers)
 	if err != nil {
 		log.Fatal("Error with conversationService.CreateConversation()", err)
 	}
 
+	// Convert back to pkg
 	var responseMembers []*pkg.Client
 	for _, member := range conversation.Members {
 		responseMembers = append(responseMembers, &pkg.Client{Name: member.Name, ClientId: member.ClientId})
 	}
-
 	conversationResponse := &pkg.ConversationResponse{
 		Id:      conversation.Id,
 		Members: responseMembers,

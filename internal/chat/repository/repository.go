@@ -9,7 +9,7 @@ type Repository interface {
 	init()
 	CreateConversation(members []*datastructs.Client) (string, error)
 	CreateMessage(message datastructs.Message) (string, error)
-	GetConversationByMemberNames(memberNames []string) (datastructs.Conversation, error)
+	GetConversationByMemberIds(memberIds []string) (datastructs.Conversation, error)
 }
 
 func NewRepository(connection db.DbConnection) Repository {

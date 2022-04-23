@@ -1,6 +1,6 @@
 package mongostructs
 
 type Client struct {
-	Id   string `bson:"_id,omitempty"`
+	Id   string `bson:"id,omitempty"`
 	Name string `bson:"name,omitempty"`
 }

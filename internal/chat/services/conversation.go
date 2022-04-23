@@ -37,25 +37,28 @@ func NewConversationService(repo repository.Repository) ConversationService {
 }
 
 func (cs *conversationService) CreateConversation(members []*datastructs.Client) (*datastructs.Conversation, error) {
-	var memberNames []string
+	// Create string of ids for db query
+	var memberIds []string
 	for _, member := range members {
-		memberNames = append(memberNames, member.Name)
+		memberIds = append(memberIds, member.ClientId)
 	}
-	conversation, err := cs.repo.GetConversationByMemberNames(memberNames)
+
+	// Query db with these members for existing convo
+	conversation, err := cs.repo.GetConversationByMemberIds(memberIds)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if conversation.Id != "" {
-		log.Println("Found Conversation in database!")
+		log.Printf("Found Conversation %s in database!\n", conversation.Id)
 		return &conversation, nil
 	}
 
+	// Convo doesn't exist, store new convo in db
 	id, insertError := cs.repo.CreateConversation(members)
 	if insertError != nil {
 		log.Fatal("Insert Error calling the repo.CreateConversation from the conversation Service", insertError)
 	}
 
-	// CLIENT IS LOOKING AT MEMBERS CLIENTID INSTEAD OF ID
 	conversation = datastructs.Conversation{
 		Id:      id,
 		Members: members,
@@ -65,28 +68,34 @@ func (cs *conversationService) CreateConversation(members []*datastructs.Client)
 }
 
 func (cs *conversationService) Converse(stream pkg.Chatroom_ConverseServer) error {
-
+	// Cache the clientId in this goroutine
 	var clientId string
+
+	// Infinite loop to store stream
 	for {
 		in, err := stream.Recv()
 
-		if err == io.EOF {
-			return nil
-		}
-		if err != nil {
+		// close goroutine once client disconnects
+		if err != nil || err == io.EOF {
 			cs.clients.Delete(clientId)
 			return err
 		}
 
+		// Check for new stream registrations
 		if login := in.GetLogin(); login != nil {
+			// Gather stream info
 			clientId := login.GetClientId()
 			name := login.GetName()
 			log.Printf("%s with %s has requested a stream registration", name, clientId)
+
+			// Store the new stream
 			cs.clients.Store(clientId, &datastructs.Client{
 				Stream:   stream,
 				ClientId: clientId,
 				Name:     name,
 			})
+
+			// Broadcsat event
 			from := &pkg.Client{
 				ClientId: clientId,
 				Name:     name,
@@ -97,11 +106,13 @@ func (cs *conversationService) Converse(stream pkg.Chatroom_ConverseServer) erro
 				},
 			})
 			log.Printf("%s logged in with client id: %s\n", name, from.GetClientId())
+
 		} else if message := in.GetMessage(); message != nil {
-			// Get this message broadcasted out
+			// New Message event received
 			from := message.GetFrom()
 			conversation := message.GetConversation()
 
+			// Broadcast message to recipients
 			cs.Broadcast(from, conversation, &pkg.ChatEvent{
 				Command: &pkg.ChatEvent_Message{
 					Message: &pkg.Message{

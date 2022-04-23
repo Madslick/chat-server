@@ -32,8 +32,8 @@ func (mr *mongoRepository) init() {
 }
 
 func (mr *mongoRepository) CreateConversation(members []*datastructs.Client) (string, error) {
+	// Build conversation mongostruct
 	clients := []mongostructs.Client{}
-
 	for _, mem := range members {
 		clients = append(clients, mongostructs.Client{
 			Id:   mem.ClientId,
@@ -44,39 +44,47 @@ func (mr *mongoRepository) CreateConversation(members []*datastructs.Client) (st
 		Members: clients,
 	}
 
+	// Insert into database and retrieve ID
 	result, err := mr.conversations.InsertOne(context.TODO(), conversation)
 	if err != nil {
 		log.Fatal("Error inserting new Conversation", err)
 		return "", err
 	}
+
 	return result.InsertedID.(primitive.ObjectID).String(), nil
 }
 
-func (mr *mongoRepository) GetConversationByMemberNames(memberNames []string) (datastructs.Conversation, error) {
+func (mr *mongoRepository) GetConversationByMemberIds(memberIds []string) (datastructs.Conversation, error) {
 
+	// Build Filter object
 	memberFilter := bson.A{}
-	for _, memberName := range memberNames {
-		memberFilter = append(memberFilter, bson.M{"members": bson.M{"$elemMatch": bson.M{"name": memberName}}})
+	for _, memberId := range memberIds {
+		memberFilter = append(
+			memberFilter,
+			bson.M{"members": bson.M{"$elemMatch": bson.M{"id": memberId}}},
+		)
 	}
-	memberFilter = append(memberFilter, bson.M{"members": bson.M{"$size": len(memberNames)}})
-
+	memberFilter = append(memberFilter, bson.M{"members": bson.M{"$size": len(memberIds)}})
 	filter := bson.D{
 		{"$and", memberFilter},
 	}
+
+	// Query database with filter
 	conversations := []mongostructs.Conversation{}
 	cursor, err := mr.conversations.Find(context.TODO(), filter)
 	if err != nil {
 		panic(err)
 	}
 
+	// Set result to conversations variable
 	if err = cursor.All(context.TODO(), &conversations); err != nil {
 		panic(err)
 	}
-
 	log.Printf("Conversation filter returned %d results\n", len(conversations))
 
+	// Convert result to datastructs
 	conversation := datastructs.Conversation{}
-	if len(conversations) == 1 {
+	if len(conversations) > 0 {
 		conversation.Id = conversations[0].Id.String()
 
 		// Build Members
@@ -90,6 +98,7 @@ func (mr *mongoRepository) GetConversationByMemberNames(memberNames []string) (d
 			)
 		}
 	}
+
 	return conversation, nil
 }
 
