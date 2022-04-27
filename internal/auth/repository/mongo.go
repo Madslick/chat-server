@@ -47,7 +47,7 @@ func (mr *mongoRepository) SignUp(email string, password string, first string, l
 		panic(err)
 	}
 
-	return result.InsertedID.(primitive.ObjectID).String(), nil
+	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
 func (mr *mongoRepository) SignIn(email string, password string) (*datastructs.Account, error) {

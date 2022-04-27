@@ -41,9 +41,21 @@ func (cc *conversationConnector) CreateConversation(members []*pkg.Client) (*pkg
 	for _, member := range conversation.Members {
 		responseMembers = append(responseMembers, &pkg.Client{Name: member.Name, ClientId: member.ClientId})
 	}
+
+	var responseMessages []*pkg.ConversationMessage
+	for _, msg := range conversation.Messages {
+		responseMessages = append(responseMessages, &pkg.ConversationMessage{
+			From: &pkg.Client{
+				ClientId: msg.From.ClientId,
+				Name:     msg.From.Name,
+			},
+			Content: msg.Content,
+		})
+	}
 	conversationResponse := &pkg.ConversationResponse{
-		Id:      conversation.Id,
-		Members: responseMembers,
+		Id:       conversation.Id,
+		Members:  responseMembers,
+		Messages: responseMessages,
 	}
 
 	return conversationResponse, err

@@ -112,6 +112,16 @@ func (cs *conversationService) Converse(stream pkg.Chatroom_ConverseServer) erro
 			from := message.GetFrom()
 			conversation := message.GetConversation()
 
+			cs.repo.CreateMessage(
+				conversation.GetId(),
+				datastructs.Message{
+					From: datastructs.Client{
+						ClientId: from.GetClientId(),
+						Name:     from.GetName(),
+					},
+					Content: message.GetContent(),
+				})
+
 			// Broadcast message to recipients
 			cs.Broadcast(from, conversation, &pkg.ChatEvent{
 				Command: &pkg.ChatEvent_Message{

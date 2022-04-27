@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type mongoRepository struct {
@@ -41,7 +42,8 @@ func (mr *mongoRepository) CreateConversation(members []*datastructs.Client) (st
 		})
 	}
 	conversation := mongostructs.Conversation{
-		Members: clients,
+		Members:  clients,
+		Messages: make([]mongostructs.Message, 0),
 	}
 
 	// Insert into database and retrieve ID
@@ -51,7 +53,7 @@ func (mr *mongoRepository) CreateConversation(members []*datastructs.Client) (st
 		return "", err
 	}
 
-	return result.InsertedID.(primitive.ObjectID).String(), nil
+	return result.InsertedID.(primitive.ObjectID).Hex(), nil
 }
 
 func (mr *mongoRepository) GetConversationByMemberIds(memberIds []string) (datastructs.Conversation, error) {
@@ -69,9 +71,11 @@ func (mr *mongoRepository) GetConversationByMemberIds(memberIds []string) (datas
 		{"$and", memberFilter},
 	}
 
+	opts := options.Find().SetProjection(bson.M{"messages": bson.M{"$slice": bson.A{0, 5}}})
+
 	// Query database with filter
 	conversations := []mongostructs.Conversation{}
-	cursor, err := mr.conversations.Find(context.TODO(), filter)
+	cursor, err := mr.conversations.Find(context.TODO(), filter, opts)
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +89,7 @@ func (mr *mongoRepository) GetConversationByMemberIds(memberIds []string) (datas
 	// Convert result to datastructs
 	conversation := datastructs.Conversation{}
 	if len(conversations) > 0 {
-		conversation.Id = conversations[0].Id.String()
+		conversation.Id = conversations[0].Id.Hex()
 
 		// Build Members
 		conversation.Members = []*datastructs.Client{}
@@ -97,11 +101,53 @@ func (mr *mongoRepository) GetConversationByMemberIds(memberIds []string) (datas
 				},
 			)
 		}
+
+		// Build the history of messages
+		conversation.Messages = []*datastructs.Message{}
+		var msg mongostructs.Message
+		for _, msg = range conversations[0].Messages {
+			conversation.Messages = append(conversation.Messages, &datastructs.Message{
+				From: datastructs.Client{
+					ClientId: msg.From.Id,
+					Name:     msg.From.Name,
+				},
+				Content: msg.Content,
+			})
+		}
+
 	}
 
 	return conversation, nil
 }
 
-func (mr *mongoRepository) CreateMessage(message datastructs.Message) (string, error) {
-	return "", nil
+func (mr *mongoRepository) CreateMessage(convId string, message datastructs.Message) (bool, error) {
+
+	newMessage := mongostructs.Message{
+		From: mongostructs.Client{
+			Id:   message.From.ClientId,
+			Name: message.From.Name,
+		},
+		Content: message.Content,
+	}
+	conversationId, _ := primitive.ObjectIDFromHex(convId)
+	log.Printf("Create Message requested for %v\n", conversationId)
+	result, err := mr.conversations.UpdateByID(
+		context.TODO(),
+		conversationId,
+		bson.M{
+			"$push": bson.M{
+				"messages": newMessage,
+			},
+		},
+	)
+	if err != nil {
+		log.Fatalf("Error occurred saving new message to conversation %s\n", conversationId)
+		return false, err
+	}
+
+	updated := result.ModifiedCount == 1
+	if updated {
+		log.Printf("Message %s saved to db\n", newMessage.Content)
+	}
+	return updated, nil
 }

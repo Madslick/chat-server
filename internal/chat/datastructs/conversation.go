@@ -1,6 +1,7 @@
 package datastructs
 
 type Conversation struct {
-	Id      string
-	Members []*Client
+	Id       string
+	Members  []*Client
+	Messages []*Message
 }

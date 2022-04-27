@@ -8,7 +8,7 @@ import (
 type Repository interface {
 	init()
 	CreateConversation(members []*datastructs.Client) (string, error)
-	CreateMessage(message datastructs.Message) (string, error)
+	CreateMessage(convId string, message datastructs.Message) (bool, error)
 	GetConversationByMemberIds(memberIds []string) (datastructs.Conversation, error)
 }
 
